@@ -1,12 +1,42 @@
 package model;
 
 import com.formdev.flatlaf.FlatDarkLaf;
+import javax.swing.JOptionPane;
 
 public class ReportPanel extends javax.swing.JDialog {
 
     public ReportPanel(java.awt.Frame parent, boolean modal) {
         super(parent, modal);
         initComponents();
+    }
+
+    private void generateReport(int reportId) {
+        switch (reportId) {
+            case 1: { // Daily Report
+                
+                break;
+            }
+            case 2: { // Weekly Report
+                break;
+            }
+            case 3: { // Monthly Report
+                break;
+            }
+            case 4: { // Stock Level Report
+                break;
+            }
+            case 5: { // Stock Movement Report
+                break;
+            }
+            case 6: { // Top Customers Report
+                break;
+            }
+            case 7: { // Finance Report
+                break;
+            }
+            default:
+                JOptionPane.showMessageDialog(this, "Please Select Report Type", "Missing Type", JOptionPane.WARNING_MESSAGE);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -17,7 +47,7 @@ public class ReportPanel extends javax.swing.JDialog {
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
         jComboBox1 = new javax.swing.JComboBox<>();
-        jButton1 = new javax.swing.JButton();
+        generateBtn = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -28,7 +58,12 @@ public class ReportPanel extends javax.swing.JDialog {
 
         jComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "-- Choose --", "Daily Report", "Weekly Report", "Monthly Report", "Stock Level Report", "Stock Movement Report", "Top Customers Report", "Finance Report" }));
 
-        jButton1.setText("Generate");
+        generateBtn.setText("Generate");
+        generateBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                generateBtnActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -42,7 +77,7 @@ public class ReportPanel extends javax.swing.JDialog {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, 203, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 89, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(generateBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 89, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addComponent(jLabel1))
                 .addContainerGap(73, Short.MAX_VALUE))
         );
@@ -55,7 +90,7 @@ public class ReportPanel extends javax.swing.JDialog {
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton1))
+                    .addComponent(generateBtn))
                 .addContainerGap(31, Short.MAX_VALUE))
         );
 
@@ -73,10 +108,20 @@ public class ReportPanel extends javax.swing.JDialog {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    private void generateBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_generateBtnActionPerformed
+
+        if (jComboBox1.getSelectedIndex() == 0) {
+            JOptionPane.showMessageDialog(this, "Please Select Report Type", "Missing Type", JOptionPane.WARNING_MESSAGE);
+        } else {
+            generateReport(jComboBox1.getSelectedIndex());
+        }
+
+    }//GEN-LAST:event_generateBtnActionPerformed
+
     public static void main(String args[]) {
-        
+
         FlatDarkLaf.setup();
-        
+
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
                 ReportPanel dialog = new ReportPanel(new javax.swing.JFrame(), true);
@@ -92,7 +137,7 @@ public class ReportPanel extends javax.swing.JDialog {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1;
+    private javax.swing.JButton generateBtn;
     private javax.swing.JComboBox<String> jComboBox1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
