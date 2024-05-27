@@ -41,6 +41,7 @@ public class ReportPanel extends javax.swing.JDialog {
         dailyReport1.setVisible(false);
         weeklyReport1.setVisible(false);
         sL_and_SM_and_TC_and_PL_Report1.setVisible(false);
+        jButton1.setVisible(false);
     }
 
     @SuppressWarnings("unchecked")
@@ -52,6 +53,7 @@ public class ReportPanel extends javax.swing.JDialog {
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
         jComboBox1 = new javax.swing.JComboBox<>();
+        jButton1 = new javax.swing.JButton();
         jPanel5 = new javax.swing.JPanel();
         monthlyReport1 = new gui.MonthlyReport();
         dailyReport1 = new gui.DailyReport();
@@ -73,6 +75,13 @@ public class ReportPanel extends javax.swing.JDialog {
             }
         });
 
+        jButton1.setText("Generate");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -84,8 +93,10 @@ public class ReportPanel extends javax.swing.JDialog {
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(jLabel2)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, 203, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(297, Short.MAX_VALUE))
+                        .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, 203, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(jButton1)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -95,7 +106,8 @@ public class ReportPanel extends javax.swing.JDialog {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 25, Short.MAX_VALUE)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jButton1))
                 .addContainerGap())
         );
 
@@ -110,7 +122,7 @@ public class ReportPanel extends javax.swing.JDialog {
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(jPanel5, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(jPanel5, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 630, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -130,10 +142,11 @@ public class ReportPanel extends javax.swing.JDialog {
         switch (reportChoiceIndex) {
             case 1://daily
                 jPanel5.setVisible(true);
-                
+
                 weeklyReport1.setVisible(false);
                 monthlyReport1.setVisible(false);
                 sL_and_SM_and_TC_and_PL_Report1.setVisible(false);
+                jButton1.setVisible(false);
                 dailyReport1.setVisible(true);
                 break;
             case 2://weekly
@@ -142,6 +155,7 @@ public class ReportPanel extends javax.swing.JDialog {
                 dailyReport1.setVisible(false);
                 monthlyReport1.setVisible(false);
                 sL_and_SM_and_TC_and_PL_Report1.setVisible(false);
+                jButton1.setVisible(false);
                 weeklyReport1.setVisible(true);
                 break;
             case 3://monthly
@@ -150,6 +164,7 @@ public class ReportPanel extends javax.swing.JDialog {
                 weeklyReport1.setVisible(false);
                 dailyReport1.setVisible(false);
                 sL_and_SM_and_TC_and_PL_Report1.setVisible(false);
+                jButton1.setVisible(false);
                 monthlyReport1.setVisible(true);
                 break;
             case 4://stock level
@@ -160,13 +175,72 @@ public class ReportPanel extends javax.swing.JDialog {
                 weeklyReport1.setVisible(false);
                 dailyReport1.setVisible(false);
                 monthlyReport1.setVisible(false);
+                jButton1.setVisible(false);
                 sL_and_SM_and_TC_and_PL_Report1.setVisible(true);
+                break;
+            case 8:
+                jPanel5.setVisible(false);
+                weeklyReport1.setVisible(false);
+                dailyReport1.setVisible(false);
+                monthlyReport1.setVisible(false);
+                sL_and_SM_and_TC_and_PL_Report1.setVisible(false);
+                jButton1.setVisible(true);
                 break;
             default:
                 break;
         }
 
     }//GEN-LAST:event_jComboBox1ItemStateChanged
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+
+        try {
+            JasperCompileManager.compileReport("/Report/AllEmployeeReport.jrxml");
+        } catch (JRException ex) {
+            System.out.println("model.ReportPanel.generateReport()");
+        }
+        
+        int totalEmployee=0;
+        DefaultTableModel dtm = new DefaultTableModel();
+        dtm.setRowCount(0);
+        
+        String query = "SELECT * FROM `user` INNER JOIN `type` ON `user`.`user_type_id`=`type`.`id` "
+                + "INNER JOIN `status` ON `user`.`status_id`=`status`.`id` "
+                + "ORDER BY `user`.`id` ASC";
+        try {
+            ResultSet rs = MySQL.executeSearch(query);
+            
+            while(rs.next()){
+                
+                Vector<String> v = new Vector();
+
+                v.add(rs.getString("user.id"));
+                v.add(rs.getString("user.fname"));
+                v.add(rs.getString("user.lname"));
+                v.add(rs.getString("user.mobile"));
+                v.add(rs.getString("type.type"));
+                v.add(rs.getString("status.status"));
+
+                dtm.addRow(v);
+                
+                totalEmployee++;
+            }
+            
+        } catch (Exception ex) {
+            Logger.getLogger(ReportPanel.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        HashMap<String, Object> parameters = new HashMap<>();
+        parameters.put("TotalEmployee", String.valueOf(totalEmployee));
+        
+        try {
+            JasperPrint jasperPrint = JasperFillManager.fillReport("/Report/AllEmployeeReport.jasper", parameters);
+            JasperViewer.viewReport(jasperPrint, false);
+        } catch (JRException ex) {
+            Logger.getLogger(ReportPanel.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+    }//GEN-LAST:event_jButton1ActionPerformed
 
     public static void main(String args[]) {
 
@@ -188,6 +262,7 @@ public class ReportPanel extends javax.swing.JDialog {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private gui.DailyReport dailyReport1;
+    private javax.swing.JButton jButton1;
     private javax.swing.JComboBox<String> jComboBox1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
