@@ -1,19 +1,17 @@
 package gui;
 
+import java.net.URL;
 import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 import model.MySQL;
 import model.TopCustomerBean;
+import net.sf.jasperreports.engine.JREmptyDataSource;
 import net.sf.jasperreports.engine.JRException;
-import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.data.JRTableModelDataSource;
@@ -35,25 +33,28 @@ public class SL_and_SM_and_TC_and_PL_Report extends javax.swing.JPanel {
 
     private void generateStockLevelReport(String fromDate, String toDate) {
 
-        try {
-            JasperCompileManager.compileReport("/Report/stock_level.jrxml");
-        } catch (JRException ex) {
-            System.out.println("model.ReportPanel.generateReport()");
-        }
-
-        String query = "SELECT * FROM `stock` ON `stock`.`id`=`invoice_item`.`stock_id` "
+        String query = "SELECT * FROM `stock` "
                 + "INNER JOIN `product` ON `product`.`id`=`stock`.`product_id` "
                 + "INNER JOIN `category` ON `category`.`id`=`product`.`category_id` "
                 + "INNER JOIN `brand` ON `brand`.`id`=`product`.`brand_id` "
                 + "INNER JOIN `grn_item` ON `stock`.`id`=`grn_item`.`stock_id` "
                 + "INNER JOIN `grn` ON `grn_item`.`grn_id`=`grn`.`id` "
                 + "INNER JOIN `supplier` ON `supplier`.`mobile`=`grn`.`supplier_mobile` "
-                + "WHERE `stock`.`add_date` BETWEEN ? AND ? ORDER BY `stock`.`id` ASC";
+                + "WHERE `stock`.`add_date` BETWEEN '" + fromDate + "' AND '" + toDate + "' ORDER BY `stock`.`id` ASC";
 
         try {
-            ResultSet rs = MySQL.executeSearch(query, fromDate, toDate);
+            ResultSet rs = MySQL.execute(query);
 
             DefaultTableModel dtm = new DefaultTableModel();
+
+            dtm.addColumn("Stock_Id");
+            dtm.addColumn("Item");
+            dtm.addColumn("Brand");
+            dtm.addColumn("Category");
+            dtm.addColumn("Supplier");
+            dtm.addColumn("SuplierContact");
+            dtm.addColumn("AvaliableStock");
+
             dtm.setRowCount(0);
             int totalStocks = 0;
 
@@ -76,43 +77,54 @@ public class SL_and_SM_and_TC_and_PL_Report extends javax.swing.JPanel {
             HashMap<String, Object> parameters = new HashMap<>();
             parameters.put("From", fromDate);
             parameters.put("To", toDate);
-            parameters.put("TotalStok", totalStocks);
+            parameters.put("TotalStok", String.valueOf(totalStocks));
+
+            URL imagePathUrl = getClass().getResource("/images/");
+            if (imagePathUrl != null) {
+                String imagePath = imagePathUrl.toString();
+                parameters.put("IMAGE_PATH", imagePath);
+            } else {
+                throw new RuntimeException("Image path not found");
+            }
 
             JRTableModelDataSource tmd = new JRTableModelDataSource(dtm);
 
             try {
-                JasperPrint jasperPrint = JasperFillManager.fillReport("/Report/stock_level.jasper", parameters, tmd);
+                JasperPrint jasperPrint = JasperFillManager.fillReport(getClass().getResourceAsStream("/report/stock_level.jasper"), parameters, tmd);
                 JasperViewer.viewReport(jasperPrint, false);
             } catch (JRException ex) {
-                Logger.getLogger(ReportPanel.class.getName()).log(Level.SEVERE, null, ex);
+                System.out.println("Couldnot Load Data"+ex);
             }
 
         } catch (Exception ex) {
-            Logger.getLogger(SL_and_SM_and_TC_and_PL_Report.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Couldnot Load Data"+ex);
         }
 
     }
 
     private void generateStockMovementReport(String fromDate, String toDate) {
 
-        try {
-            JasperCompileManager.compileReport("/Report/stock_movement.jrxml");
-        } catch (JRException ex) {
-            System.out.println("model.ReportPanel.generateReport()");
-        }
-
-        String query = "SELECT * FROM `stock` ON `stock`.`id`=`invoice_item`.`stock_id` "
+        String query = "SELECT * FROM `stock` "
                 + "INNER JOIN `product` ON `product`.`id`=`stock`.`product_id` "
                 + "INNER JOIN `grn_item` ON `stock`.`id`=`grn_item`.`stock_id` "
                 + "INNER JOIN `grn` ON `grn_item`.`grn_id`=`grn`.`id` "
                 + "INNER JOIN `dam_stock` ON `dam_stock`.`stock_id`=`stock`.`id` "
-                + "WHERE `stock`.`add_date` BETWEEN ? AND ? ORDER BY `stock`.`id` ASC";
+                + "WHERE `stock`.`add_date` BETWEEN '" + fromDate + "' AND '" + toDate + "' ORDER BY `stock`.`id` ASC";
 
         try {
-            ResultSet rs = MySQL.executeSearch(query, fromDate, toDate);
+            ResultSet rs = MySQL.execute(query);
             ResultSet rs2 = rs;
 
             DefaultTableModel dtm = new DefaultTableModel();
+
+            dtm.addColumn("Stock_Id");
+            dtm.addColumn("Item");
+            dtm.addColumn("QtyReceived");
+            dtm.addColumn("ReceivedUnitPrice");
+            dtm.addColumn("SoldQty");
+            dtm.addColumn("SoldUnitPrice");
+            dtm.addColumn("DamageQty");
+
             dtm.setRowCount(0);
             int totalStocks = 0;
 
@@ -156,39 +168,41 @@ public class SL_and_SM_and_TC_and_PL_Report extends javax.swing.JPanel {
             HashMap<String, Object> parameters = new HashMap<>();
             parameters.put("From", fromDate);
             parameters.put("To", toDate);
-            parameters.put("TotalStok", totalStocks);
+            parameters.put("TotalStok", String.valueOf(totalStocks));
+
+            URL imagePathUrl = getClass().getResource("/images/");
+            if (imagePathUrl != null) {
+                String imagePath = imagePathUrl.toString();
+                parameters.put("IMAGE_PATH", imagePath);
+            } else {
+                throw new RuntimeException("Image path not found");
+            }
 
             JRTableModelDataSource tmd = new JRTableModelDataSource(dtm);
 
             try {
-                JasperPrint jasperPrint = JasperFillManager.fillReport("/Report/stock_movement.jasper", parameters, tmd);
+                JasperPrint jasperPrint = JasperFillManager.fillReport(getClass().getResourceAsStream("/report/stock_movement.jasper"), parameters, tmd);
                 JasperViewer.viewReport(jasperPrint, false);
             } catch (JRException ex) {
-                Logger.getLogger(ReportPanel.class.getName()).log(Level.SEVERE, null, ex);
+                System.out.println("Couldnot Load Data"+ex);
             }
 
         } catch (Exception ex) {
-            Logger.getLogger(SL_and_SM_and_TC_and_PL_Report.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Couldnot Load Data"+ex);
         }
 
     }
 
     private void generateTopCustomersReport(String fromDate, String toDate) {
 
-        try {
-            JasperCompileManager.compileReport("/Report/top_customers.jrxml");
-        } catch (JRException ex) {
-            System.out.println("model.ReportPanel.generateReport()");
-        }
-
         String query = "SELECT * FROM `customer` INNER JOIN `invoice` ON `customer`.`mobile`=`invoice`.`customer_mobile` "
-                + "WHERE `invoice`.`date` BETWEEN ? AND ? ORDER BY `invoice`.`paid_amount` DESC";
+                + "WHERE `invoice`.`date` BETWEEN '" + fromDate + "' AND '" + toDate + "' ORDER BY `invoice`.`paid_amount` DESC";
 
         HashMap<String, TopCustomerBean> beanHash = new HashMap<>();
         int totalCustomers = 0;
 
         try {
-            ResultSet rs = MySQL.executeSearch(query, fromDate, toDate);
+            ResultSet rs = MySQL.execute(query);
 
             while (rs.next()) {
 
@@ -214,9 +228,17 @@ public class SL_and_SM_and_TC_and_PL_Report extends javax.swing.JPanel {
 
             }
         } catch (Exception e) {
+            System.out.println("Couldnot Load Data"+e);
         }
 
         DefaultTableModel dtm = new DefaultTableModel();
+
+        dtm.addColumn("CustomerId");
+        dtm.addColumn("Name");
+        dtm.addColumn("Contact");
+        dtm.addColumn("TotalPurchase");
+        dtm.addColumn("NoOfTransactions");
+
         dtm.setRowCount(0);
 
         for (TopCustomerBean bean : beanHash.values()) {
@@ -237,65 +259,78 @@ public class SL_and_SM_and_TC_and_PL_Report extends javax.swing.JPanel {
         parameters.put("To", String.valueOf(toDate));
         parameters.put("NoRegisteredCustomers", String.valueOf(totalCustomers));
 
+        URL imagePathUrl = getClass().getResource("/images/");
+        if (imagePathUrl != null) {
+            String imagePath = imagePathUrl.toString();
+            parameters.put("IMAGE_PATH", imagePath);
+        } else {
+            throw new RuntimeException("Image path not found");
+        }
+
         JRTableModelDataSource tmd = new JRTableModelDataSource(dtm);
 
         try {
-            JasperPrint jasperPrint = JasperFillManager.fillReport("/Report/top_customers.jasper", parameters, tmd);
+            JasperPrint jasperPrint = JasperFillManager.fillReport(getClass().getResourceAsStream("/report/top_customers.jasper"), parameters, tmd);
             JasperViewer.viewReport(jasperPrint, false);
         } catch (JRException ex) {
-            Logger.getLogger(ReportPanel.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Couldnot Load Data"+ex);
         }
 
     }
 
     private void generateProfitAndLossReport(String fromDate, String toDate) {
 
-        try {
-            JasperCompileManager.compileReport("/Report/profit_and_loss_report.jrxml");
-        } catch (JRException ex) {
-            System.out.println("model.ReportPanel.generateReport()");
-        }
-
         double totalRevenue = 0.0;
         double totalCost = 0.0;
         double profit = 0.0;
 
         String revenue = "SELECT SUM(`invoice`.`paid_amount`) AS `totalRevenue` FROM `invoice` "
-                + "WHERE `invoice`.`date` BETWEEN ? AND ?";
+                + "WHERE `invoice`.`date` BETWEEN '" + fromDate + "' AND '" + toDate + "'";
         try {
-            ResultSet revenueRs = MySQL.executeSearch(revenue, fromDate, toDate);
+            ResultSet revenueRs = MySQL.execute(revenue);
             if (revenueRs.next()) {
                 totalRevenue = revenueRs.getDouble("totalRevenue");
             }
         } catch (Exception ex) {
-            Logger.getLogger(SL_and_SM_and_TC_and_PL_Report.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Couldnot Load Data"+ex);
         }
 
-        String cost = "SELECT SUM(`grn`.`paid_amount`) AS `totalCost` FROM `invoice` "
-                + "WHERE `invoice`.`date` BETWEEN ? AND ?";
+        String cost = "SELECT SUM(`grn`.`paid_amount`) AS `totalCost` FROM `grn` "
+                + "WHERE `grn`.`date` BETWEEN '" + fromDate + "' AND '" + toDate + "'";
         try {
-            ResultSet costRs = MySQL.executeSearch(cost, fromDate, toDate);
+            ResultSet costRs = MySQL.execute(cost);
             if (costRs.next()) {
                 totalCost = costRs.getDouble("totalCost");
             }
         } catch (Exception ex) {
-            Logger.getLogger(SL_and_SM_and_TC_and_PL_Report.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Couldnot Load Data"+ex);
         }
 
         profit = totalRevenue - totalCost;
-        
+
         HashMap<String, Object> parameters = new HashMap<>();
         parameters.put("From", String.valueOf(fromDate));
         parameters.put("To", String.valueOf(toDate));
         parameters.put("Total", String.valueOf(totalRevenue));
         parameters.put("Cost", String.valueOf(totalCost));
         parameters.put("Profit", String.valueOf(profit));
-        
+        parameters.put("CompanyName", "nexGen");
+
+        URL imagePathUrl = getClass().getResource("/images/");
+        if (imagePathUrl != null) {
+            String imagePath = imagePathUrl.toString();
+            parameters.put("IMAGE_PATH", imagePath);
+        } else {
+            throw new RuntimeException("Image path not found");
+        }
+
         try {
-            JasperPrint jasperPrint = JasperFillManager.fillReport("/Report/profit_and_loss_report.jasper", parameters);
+            JREmptyDataSource eds = new JREmptyDataSource();
+                    
+            JasperPrint jasperPrint = JasperFillManager.fillReport(getClass().getResourceAsStream("/report/profit_and_loss_report.jasper"), parameters,eds);
             JasperViewer.viewReport(jasperPrint, false);
         } catch (JRException ex) {
-            Logger.getLogger(ReportPanel.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Couldnot Load Data"+ex);
         }
 
     }

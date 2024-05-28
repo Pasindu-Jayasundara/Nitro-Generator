@@ -1,5 +1,6 @@
 package gui;
 
+import java.net.URL;
 import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
 import java.time.DayOfWeek;
@@ -9,13 +10,10 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 import model.MySQL;
 import net.sf.jasperreports.engine.JRException;
-import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.data.JRTableModelDataSource;
@@ -35,13 +33,7 @@ public class WeeklyReport extends javax.swing.JPanel {
     }
     private void generateWeeklyReport(String reportDate) {
 
-        try {
-            JasperCompileManager.compileReport("/Report/weekly_report.jrxml");
-        } catch (JRException ex) {
-            System.out.println("model.ReportPanel.generateReport()");
-        }
-
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("YYYY-MM-dd");
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         LocalDate currentDate = LocalDate.parse(reportDate, dtf);
         LocalDate startOfWeek = currentDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
         LocalDate endOfWeek = currentDate.with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
@@ -51,16 +43,25 @@ public class WeeklyReport extends javax.swing.JPanel {
                 + "INNER JOIN `product` ON `product`.`id`=`stock`.`product_id` "
                 + "INNER JOIN `user` ON `user`.`id`=`invoice`.`user_id` "
                 + "INNER JOIN `category` ON `category`.`id`=`product`.`category_id` "
-                + "WHERE `invoice`.`date` BETWEEN ? AND ? ORDER BY `invoice`.`id` ASC";
+                + "WHERE `invoice`.`date` BETWEEN '"+this.sdf.format(java.sql.Date.valueOf(startOfWeek))+"' "
+                + "AND '"+this.sdf.format(java.sql.Date.valueOf(endOfWeek))+"' ORDER BY `invoice`.`id` ASC";
 
         String bestSellingProduct = "", bestSellingProductCategory = "", invoiceId = "";
         int bestSellingProductQty = 0, transactionCount = 0;
         double total = 0.0;
 
         DefaultTableModel dtm = new DefaultTableModel();
+        
+        dtm.addColumn("Invoice_id");
+        dtm.addColumn("Item");
+        dtm.addColumn("Cashier");
+        dtm.addColumn("Qty");
+        dtm.addColumn("Unit_price");
+        dtm.addColumn("Net_price");
+        
         dtm.setRowCount(0);
         try {
-            ResultSet rs = MySQL.executeSearch(query, this.sdf.format(startOfWeek), this.sdf.format(endOfWeek));
+            ResultSet rs = MySQL.execute(query);
 
             while (rs.next()) {
                 Vector<String> v = new Vector();
@@ -88,7 +89,7 @@ public class WeeklyReport extends javax.swing.JPanel {
             }
 
         } catch (Exception ex) {
-            Logger.getLogger(ReportPanel.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Couldnot Load Data"+ex);
         }
 
         HashMap<String, Object> parameters = new HashMap<>();
@@ -111,16 +112,18 @@ public class WeeklyReport extends javax.swing.JPanel {
         double[] dayIncomes = new double[7];
 
         for (int i = 0; i < 7; i++) {
-            String queryForDay = "SELECT * FROM `invoice` WHERE `invoice`.`date`=?";
+            String queryForDay = "SELECT * FROM `invoice` WHERE `invoice`.`date`='"+this.sdf.format(java.sql.Date.valueOf(startOfWeek.plusDays(i)))+"'";
             try {
-                ResultSet rs = MySQL.executeSearch(queryForDay, this.sdf.format(startOfWeek.plusDays(i)));
+                ResultSet rs = MySQL.execute(queryForDay);
+                int tCount=0;
                 while (rs.next()) {
                     dayIncomes[i] = rs.getDouble("invoice.paid_amount");
-                    dayTransactions[i] = rs.getInt("tcount");
+                    tCount++;
                 }
+                    dayTransactions[i] = tCount;
 
             } catch (Exception ex) {
-                Logger.getLogger(ReportPanel.class.getName()).log(Level.SEVERE, null, ex);
+                System.out.println("Couldnot Load Data"+ex);
             }
         }
 
@@ -140,13 +143,21 @@ public class WeeklyReport extends javax.swing.JPanel {
         parameters.put("Income_06", String.valueOf(dayIncomes[5]));
         parameters.put("Income_07", String.valueOf(dayIncomes[6]));
 
+        URL imagePathUrl = getClass().getResource("/images/");
+        if (imagePathUrl != null) {
+            String imagePath = imagePathUrl.toString();
+            parameters.put("IMAGE_PATH", imagePath);
+        } else {
+            throw new RuntimeException("Image path not found");
+        }
+        
         JRTableModelDataSource tmd = new JRTableModelDataSource(dtm);
 
         try {
-            JasperPrint jasperPrint = JasperFillManager.fillReport("/Report/daily_report.jasper", parameters, tmd);
+            JasperPrint jasperPrint = JasperFillManager.fillReport(getClass().getResourceAsStream("/report/weekly_report.jasper"), parameters, tmd);
             JasperViewer.viewReport(jasperPrint, false);
         } catch (JRException ex) {
-            Logger.getLogger(ReportPanel.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Couldnot Load Data"+ex);
         }
 
     }

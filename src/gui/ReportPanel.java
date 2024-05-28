@@ -2,25 +2,13 @@ package gui;
 
 import com.formdev.flatlaf.FlatDarkLaf;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 import model.MySQL;
 import net.sf.jasperreports.engine.JRException;
-import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
-import net.sf.jasperreports.engine.data.JRTableModelDataSource;
 import java.sql.ResultSet;
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.temporal.TemporalAdjusters;
-import java.time.temporal.WeekFields;
-import java.util.Locale;
 import java.util.Vector;
 import net.sf.jasperreports.view.JasperViewer;
 
@@ -43,7 +31,7 @@ public class ReportPanel extends javax.swing.JDialog {
         sL_and_SM_and_TC_and_PL_Report1.setVisible(false);
         jButton1.setVisible(false);
     }
-
+    
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -61,7 +49,6 @@ public class ReportPanel extends javax.swing.JDialog {
         sL_and_SM_and_TC_and_PL_Report1 = new gui.SL_and_SM_and_TC_and_PL_Report();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
-        setAlwaysOnTop(true);
 
         jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
         jLabel1.setText("GENERATE REPORTS");
@@ -129,7 +116,7 @@ public class ReportPanel extends javax.swing.JDialog {
             .addGroup(layout.createSequentialGroup()
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel5, javax.swing.GroupLayout.DEFAULT_SIZE, 82, Short.MAX_VALUE))
+                .addComponent(jPanel5, javax.swing.GroupLayout.DEFAULT_SIZE, 120, Short.MAX_VALUE))
         );
 
         pack();
@@ -194,12 +181,6 @@ public class ReportPanel extends javax.swing.JDialog {
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
 
-        try {
-            JasperCompileManager.compileReport("/Report/AllEmployeeReport.jrxml");
-        } catch (JRException ex) {
-            System.out.println("model.ReportPanel.generateReport()");
-        }
-        
         int totalEmployee=0;
         DefaultTableModel dtm = new DefaultTableModel();
         dtm.setRowCount(0);
@@ -208,7 +189,7 @@ public class ReportPanel extends javax.swing.JDialog {
                 + "INNER JOIN `status` ON `user`.`status_id`=`status`.`id` "
                 + "ORDER BY `user`.`id` ASC";
         try {
-            ResultSet rs = MySQL.executeSearch(query);
+            ResultSet rs = MySQL.execute(query);
             
             while(rs.next()){
                 
@@ -227,17 +208,17 @@ public class ReportPanel extends javax.swing.JDialog {
             }
             
         } catch (Exception ex) {
-            Logger.getLogger(ReportPanel.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Couldnot Load Data"+ex);
         }
         
         HashMap<String, Object> parameters = new HashMap<>();
         parameters.put("TotalEmployee", String.valueOf(totalEmployee));
         
         try {
-            JasperPrint jasperPrint = JasperFillManager.fillReport("/Report/AllEmployeeReport.jasper", parameters);
+            JasperPrint jasperPrint = JasperFillManager.fillReport(getClass().getResourceAsStream("/Report/AllEmployeeReport.jasper"), parameters);
             JasperViewer.viewReport(jasperPrint, false);
         } catch (JRException ex) {
-            Logger.getLogger(ReportPanel.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Couldnot Load Data"+ex);
         }
 
     }//GEN-LAST:event_jButton1ActionPerformed

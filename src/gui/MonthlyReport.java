@@ -1,21 +1,18 @@
 package gui;
 
+import java.net.URL;
 import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAdjusters;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 import model.MySQL;
 import net.sf.jasperreports.engine.JRException;
-import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.data.JRTableModelDataSource;
@@ -37,27 +34,29 @@ public class MonthlyReport extends javax.swing.JPanel {
 
     private void generateMonthlyReport(String startDateOfMonth, String endDateOfMonth, String weekFromArr[], String weekToArr[]) {
 
-        try {
-            JasperCompileManager.compileReport("/Report/monthly_report.jrxml");
-        } catch (JRException ex) {
-            System.out.println("model.ReportPanel.generateReport()");
-        }
-
         String query = "SELECT * FROM `invoice` INNER JOIN `invoice_item` ON `invoice`.`id`=`invoice_item`.`invoice_id` "
                 + "INNER JOIN `stock` ON `stock`.`id`=`invoice_item`.`stock_id` "
                 + "INNER JOIN `product` ON `product`.`id`=`stock`.`product_id` "
                 + "INNER JOIN `user` ON `user`.`id`=`invoice`.`user_id` "
                 + "INNER JOIN `category` ON `category`.`id`=`product`.`category_id` "
-                + "WHERE `invoice`.`date` BETWEEN ? AND ? ORDER BY `invoice`.`id` ASC";
+                + "WHERE `invoice`.`date` BETWEEN '" + startDateOfMonth + "' AND '" + endDateOfMonth + "' ORDER BY `invoice`.`id` ASC";
 
         String bestSellingProduct = "", bestSellingProductCategory = "", invoiceId = "";
         int bestSellingProductQty = 0, transactionCount = 0;
         double total = 0.0;
 
         DefaultTableModel dtm = new DefaultTableModel();
+
+        dtm.addColumn("Invoice_id");
+        dtm.addColumn("Item");
+        dtm.addColumn("Cashier");
+        dtm.addColumn("Qty");
+        dtm.addColumn("Unit_price");
+        dtm.addColumn("Net_price");
+
         dtm.setRowCount(0);
         try {
-            ResultSet rs = MySQL.executeSearch(query, startDateOfMonth, endDateOfMonth);
+            ResultSet rs = MySQL.execute(query);
 
             while (rs.next()) {
                 Vector<String> v = new Vector();
@@ -85,7 +84,7 @@ public class MonthlyReport extends javax.swing.JPanel {
             }
 
         } catch (Exception ex) {
-            Logger.getLogger(ReportPanel.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Couldnot Load Data" + ex);
         }
 
         HashMap<String, Object> parameters = new HashMap<>();
@@ -108,9 +107,9 @@ public class MonthlyReport extends javax.swing.JPanel {
         int transactions = 0;
 
         for (int i = 0; i < 4; i++) {
-            String queryForWeek = "SELECT * FROM `invoice` WHERE `invoice`.`date` BETWEEN ? AND ? ORDER BY `invoice`.`date` ASC";
+            String queryForWeek = "SELECT * FROM `invoice` WHERE `invoice`.`date` BETWEEN '" + weekFromArr[i] + "' AND '" + weekToArr[i] + "' ORDER BY `invoice`.`date` ASC";
             try {
-                ResultSet rs = MySQL.executeSearch(queryForWeek, weekFromArr[i], weekToArr[i]);
+                ResultSet rs = MySQL.execute(queryForWeek);
                 while (rs.next()) {
                     if (!queryDate.equals(rs.getString("invoice.date"))) {
                         queryDate = rs.getString("invoice.date");
@@ -126,7 +125,7 @@ public class MonthlyReport extends javax.swing.JPanel {
                 }
 
             } catch (Exception ex) {
-                Logger.getLogger(ReportPanel.class.getName()).log(Level.SEVERE, null, ex);
+                System.out.println("Couldnot Load Data" + ex);
             }
         }
 
@@ -140,13 +139,21 @@ public class MonthlyReport extends javax.swing.JPanel {
         parameters.put("Income_03", String.valueOf(weekIncome[2]));
         parameters.put("Income_04", String.valueOf(weekIncome[3]));
 
+        URL imagePathUrl = getClass().getResource("/images/");
+        if (imagePathUrl != null) {
+            String imagePath = imagePathUrl.toString();
+            parameters.put("IMAGE_PATH", imagePath);
+        } else {
+            throw new RuntimeException("Image path not found");
+        }
+
         JRTableModelDataSource tmd = new JRTableModelDataSource(dtm);
 
         try {
-            JasperPrint jasperPrint = JasperFillManager.fillReport("/Report/daily_report.jasper", parameters, tmd);
+            JasperPrint jasperPrint = JasperFillManager.fillReport(getClass().getResourceAsStream("/report/monthy_report.jasper"), parameters, tmd);
             JasperViewer.viewReport(jasperPrint, false);
         } catch (JRException ex) {
-            Logger.getLogger(ReportPanel.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Couldnot Load Data" + ex);
         }
 
     }
@@ -224,9 +231,17 @@ public class MonthlyReport extends javax.swing.JPanel {
             String formattedStartOfMonth = formatter.format(startOfMonth);
             String formattedEndOfMonth = formatter.format(endOfMonth);
 
+            //weeks
+            int weeksInMonth = 0;
+            LocalDate tempDate = startOfMonth.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
+            while (tempDate.isBefore(endOfMonth) || tempDate.isEqual(endOfMonth)) {
+                weeksInMonth++;
+                tempDate = tempDate.plusWeeks(1);
+            }
+
             // get week start and end dates
-            String[] weekFromArr = new String[4];
-            String[] weekToArr = new String[4];
+            String[] weekFromArr = new String[weeksInMonth];
+            String[] weekToArr = new String[weeksInMonth];
             LocalDate startOfWeek = startOfMonth.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
             LocalDate endOfWeek;
             int weekCount = 0;
